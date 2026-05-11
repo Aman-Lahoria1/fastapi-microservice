@@ -4,7 +4,6 @@ from app.api.routes import router
 app = FastAPI(
     title="Auth Service - Phase 2",
     docs_url="/auth/docs",
-    openapi_url="/auth/openapi.json",
 )
 
 app.include_router(router, prefix="/auth")
