@@ -1,7 +1,4 @@
-version: "3.9"
-
 services:
-
   nginx:
     image: nginx:latest
     ports:
@@ -11,18 +8,22 @@ services:
     depends_on:
       - auth-service
       - user-service
+      - product-service
+      - cart-service
     restart: unless-stopped
 
   auth-service:
-    build: ./auth-service
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
     expose:
       - "8000"
-    volumes:
-      - ./auth-service:/app
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_started
+      kafka:
         condition: service_started
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/authdb
@@ -30,18 +31,64 @@ services:
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: change-this-secret-in-production
       ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     restart: unless-stopped
 
   user-service:
-    build: ./user-service
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
     expose:
       - "8001"
-    volumes:
-      - ./user-service:/app
     depends_on:
-      - auth-service
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      kafka:
+        condition: service_started
     environment:
       AUTH_SERVICE_URL: http://auth-service:8000
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/userdb
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    restart: unless-stopped
+
+  product-service:
+    build:
+      context: .
+      dockerfile: product-service/Dockerfile
+    expose:
+      - "8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/productdb
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    restart: unless-stopped
+
+  cart-service:
+    build:
+      context: .
+      dockerfile: cart-service/Dockerfile
+    expose:
+      - "8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+      kafka:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/cartdb
+      AUTH_SERVICE_URL: http://auth-service:8000
+      PRODUCT_SERVICE_URL: http://product-service:8002
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     restart: unless-stopped
 
   postgres:
@@ -55,6 +102,7 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d authdb"]
       interval: 5s
@@ -70,6 +118,27 @@ services:
     ports:
       - "6379:6379"
 
+  kafka:
+    image: bitnamilegacy/kafka:3.3.2
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    environment:
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - kafka_data:/bitnami/kafka
+
 volumes:
   postgres_data:
   redis_data:
+  kafka_data:

@@ -12,3 +12,5 @@ python-jose[cryptography]
 pydantic
 pydantic-settings
 email-validator
+
+aiokafka

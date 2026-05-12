@@ -6,6 +6,7 @@ from app.core.security import hash_password, verify_password
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.utils.jwt_handler import create_access_token, decode_access_token
+from app.events.kafka import kafka_producer
 
 
 class AuthService:
@@ -25,7 +26,19 @@ class AuthService:
             password=hash_password(payload.password),
         )
 
-        return await UserRepository.create(db, user)
+        created_user = await UserRepository.create(db, user)
+
+        await kafka_producer.publish(
+            topic="user.registered",
+            key=str(created_user.id),
+            event={
+                "event_type": "user.registered",
+                "user_id": created_user.id,
+                "email": created_user.email,
+            },
+        )
+
+        return created_user
 
     @staticmethod
     async def login(db: AsyncSession, payload):

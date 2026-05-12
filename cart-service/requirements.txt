@@ -1,11 +1,9 @@
 fastapi
 uvicorn[standard]
 gunicorn
-httpx
-pydantic
-pydantic-settings
-email-validator
-
 sqlalchemy
 asyncpg
+pydantic
+pydantic-settings
+httpx
 aiokafka
