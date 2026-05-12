@@ -13,10 +13,14 @@ class ProductRepository:
 
     @staticmethod
     async def list(db: AsyncSession) -> list[Product]:
-        result = await db.execute(select(Product).where(Product.is_active == True).order_by(Product.id.desc()))
+        result = await db.execute(
+            select(Product).where(Product.is_active == True).order_by(Product.id.desc())
+        )
         return list(result.scalars().all())
 
     @staticmethod
     async def get(db: AsyncSession, product_id: int) -> Product | None:
-        result = await db.execute(select(Product).where(Product.id == product_id, Product.is_active == True))
+        result = await db.execute(
+            select(Product).where(Product.id == product_id, Product.is_active == True)
+        )
         return result.scalar_one_or_none()

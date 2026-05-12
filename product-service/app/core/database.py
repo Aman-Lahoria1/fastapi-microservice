@@ -8,7 +8,9 @@ class Base(DeclarativeBase):
 
 
 engine = create_async_engine(settings.DATABASE_URL, echo=True, pool_pre_ping=True)
-AsyncSessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
 
 
 async def get_db():

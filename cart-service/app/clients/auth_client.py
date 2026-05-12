@@ -7,9 +7,17 @@ class AuthClient:
     @staticmethod
     async def validate(authorization: str | None):
         if not authorization:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing Authorization header")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Missing Authorization header",
+            )
         async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(f"{settings.AUTH_SERVICE_URL}/auth/validate", headers={"Authorization": authorization})
+            response = await client.get(
+                f"{settings.AUTH_SERVICE_URL}/auth/validate",
+                headers={"Authorization": authorization},
+            )
         if response.status_code != 200:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            )
         return response.json()

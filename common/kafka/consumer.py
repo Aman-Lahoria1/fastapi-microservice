@@ -2,7 +2,9 @@ import json
 from aiokafka import AIOKafkaConsumer
 
 
-def build_consumer(topic: str, bootstrap_servers: str, group_id: str) -> AIOKafkaConsumer:
+def build_consumer(
+    topic: str, bootstrap_servers: str, group_id: str
+) -> AIOKafkaConsumer:
     return AIOKafkaConsumer(
         topic,
         bootstrap_servers=bootstrap_servers,

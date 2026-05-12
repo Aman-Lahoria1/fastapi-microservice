@@ -20,7 +20,9 @@ async def add_item(
     product = await ProductClient.get_product(payload.product_id)
     if product["stock"] < payload.quantity:
         raise HTTPException(status_code=400, detail="Not enough product stock")
-    item = await CartRepository.add_item(db, auth_user["user_id"], product, payload.quantity)
+    item = await CartRepository.add_item(
+        db, auth_user["user_id"], product, payload.quantity
+    )
     await kafka_producer.publish(
         topic="cart.item_added",
         key=str(auth_user["user_id"]),

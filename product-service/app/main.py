@@ -3,7 +3,18 @@ from app.api.routes import router
 from app.core.database import Base, engine
 from app.events.kafka import kafka_producer
 
-app = FastAPI(title="Product Service", docs_url="/products/docs", openapi_url="/products/openapi.json")
+app = FastAPI(
+    title="Product Service",
+    docs_url="/products/docs",
+    openapi_url="/products/openapi.json",
+)
+
+
+@app.get("/products/health")
+async def health():
+    return {"status": "product-service-ok"}
+
+
 app.include_router(router, prefix="/products")
 
 
@@ -17,8 +28,3 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     await kafka_producer.stop()
-
-
-@app.get("/products/health")
-async def health():
-    return {"status": "product-service-ok"}

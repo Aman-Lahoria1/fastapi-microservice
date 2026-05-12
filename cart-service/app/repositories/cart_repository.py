@@ -5,9 +5,13 @@ from app.models.cart import CartItem
 
 class CartRepository:
     @staticmethod
-    async def add_item(db: AsyncSession, user_id: int, product: dict, quantity: int) -> CartItem:
+    async def add_item(
+        db: AsyncSession, user_id: int, product: dict, quantity: int
+    ) -> CartItem:
         result = await db.execute(
-            select(CartItem).where(CartItem.user_id == user_id, CartItem.product_id == product["id"])
+            select(CartItem).where(
+                CartItem.user_id == user_id, CartItem.product_id == product["id"]
+            )
         )
         item = result.scalar_one_or_none()
         if item:
@@ -27,5 +31,9 @@ class CartRepository:
 
     @staticmethod
     async def list_items(db: AsyncSession, user_id: int) -> list[CartItem]:
-        result = await db.execute(select(CartItem).where(CartItem.user_id == user_id).order_by(CartItem.id.desc()))
+        result = await db.execute(
+            select(CartItem)
+            .where(CartItem.user_id == user_id)
+            .order_by(CartItem.id.desc())
+        )
         return list(result.scalars().all())

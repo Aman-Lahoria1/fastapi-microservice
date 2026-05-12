@@ -3,7 +3,16 @@ from app.api.routes import router
 from app.core.database import Base, engine
 from app.events.kafka import kafka_producer
 
-app = FastAPI(title="Cart Service", docs_url="/cart/docs", openapi_url="/cart/openapi.json")
+app = FastAPI(
+    title="Cart Service", docs_url="/cart/docs", openapi_url="/cart/openapi.json"
+)
+
+
+@app.get("/cart/health")
+async def health():
+    return {"status": "cart-service-ok"}
+
+
 app.include_router(router, prefix="/cart")
 
 
@@ -17,8 +26,3 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     await kafka_producer.stop()
-
-
-@app.get("/cart/health")
-async def health():
-    return {"status": "cart-service-ok"}
